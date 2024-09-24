@@ -9,6 +9,8 @@ export interface IToken {
 
 export interface ITokenPayload {
   userId: string;
+  email: string;
+  name: string;
   role: RoleEnum;
 }
 

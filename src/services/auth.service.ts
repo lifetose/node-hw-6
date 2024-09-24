@@ -18,6 +18,8 @@ class AuthService {
 
     const tokens = tokenService.generateTokens({
       userId: user._id,
+      email: user.email,
+      name: user.name,
       role: user.role,
     });
     await tokenRepository.create({ ...tokens, _userId: user._id });
@@ -46,13 +48,14 @@ class AuthService {
 
     const tokens = tokenService.generateTokens({
       userId: user._id,
+      email: user.email,
+      name: user.name,
       role: user.role,
     });
     await tokenRepository.create({ ...tokens, _userId: user._id });
     return { user, tokens };
   }
 
-  // TODO add refresh token service
   public async refresh(
     refreshToken: string,
     payload: ITokenPayload,
@@ -60,6 +63,8 @@ class AuthService {
     await tokenRepository.deleteByParams({ refreshToken });
     const tokens = tokenService.generateTokens({
       userId: payload.userId,
+      email: payload.email,
+      name: payload.name,
       role: payload.role,
     });
     await tokenRepository.create({ ...tokens, _userId: payload.userId });
@@ -71,6 +76,23 @@ class AuthService {
     if (user) {
       throw new ApiError("Email already exists", 409);
     }
+  }
+
+  public async logoutFromCurrentDevice(
+    jwtPayload: ITokenPayload,
+    accessToken: string,
+  ): Promise<void> {
+    await tokenRepository.deleteByParams({ accessToken });
+    await emailService.sendMail(EmailTypeEnum.LOGOUT, jwtPayload.email, {
+      name: jwtPayload.name,
+    });
+  }
+
+  public async logoutFromAllDevices(jwtPayload: ITokenPayload): Promise<void> {
+    await tokenRepository.deleteByParamsAll({ _userId: jwtPayload.userId });
+    await emailService.sendMail(EmailTypeEnum.LOGOUT, jwtPayload.email, {
+      name: jwtPayload.name,
+    });
   }
 }
 
